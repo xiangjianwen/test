@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#4F6EF7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>课时工资</title>
+<style>
+  :root {
+    --primary: #4F6EF7;
+    --primary-light: #EEF1FE;
+    --danger: #EB5757;
+    --warn: #FA8C16;
+    --text: #1F2329;
+    --text-2: #646A73;
+    --text-3: #8F959E;
+    --bg: #F5F6FA;
+    --card: #FFFFFF;
+    --line: #E5E6EB;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    font-size: 15px;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+  .page { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+  .hidden { display: none !important; }
+
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    margin: 10px 12px;
+    box-shadow: 0 1px 6px rgba(31,35,41,.05);
+    overflow: hidden;
+  }
+
+  /* ===== 月份导航 ===== */
+  .nav { display: flex; align-items: center; padding: 8px 10px; }
+  .nav-arrow {
+    width: 38px; height: 38px; border: none; background: none;
+    font-size: 26px; color: var(--text-2); border-radius: 10px; line-height: 1;
+  }
+  .nav-arrow:active { background: var(--primary-light); }
+  .nav-title { flex: 1; text-align: center; font-size: 17px; font-weight: 600; cursor: pointer; }
+  .nav-caret { font-size: 12px; color: var(--text-3); margin-left: 4px; }
+  .nav-today {
+    border: none; background: var(--primary-light); color: var(--primary);
+    font-size: 13px; padding: 5px 13px; border-radius: 999px;
+  }
+
+  /* ===== 月历 ===== */
+  .week-row { display: flex; padding: 8px 4px 2px; }
+  .week { flex: 1; text-align: center; font-size: 13px; color: var(--text-2); }
+  .week.wknd { color: #E34D59; }
+  .days { display: flex; flex-wrap: wrap; padding: 4px 4px 10px; }
+  .day-cell {
+    width: 14.2857%; height: 60px;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    padding-top: 4px; border-radius: 8px; cursor: pointer;
+  }
+  .day-cell:active { background: #F2F3F5; }
+  .day-cell.blank { pointer-events: none; }
+  .day-num { width: 26px; height: 26px; line-height: 26px; text-align: center; font-size: 16px; border-radius: 50%; }
+  .day-cell.wknd .day-num { color: #E34D59; }
+  .day-cell.today .day-num { background: var(--primary); color: #fff; font-weight: 600; }
+  .day-lunar { font-size: 10px; color: var(--text-3); max-width: 100%; overflow: hidden; white-space: nowrap; }
+  .day-lunar.hl { color: var(--warn); }
+  .day-amount { font-size: 10px; color: var(--primary); font-weight: 600; }
+  .day-amount.zero { color: var(--text-3); font-weight: 400; }
+
+  /* ===== 月度统计 ===== */
+  .sum-head { display: flex; align-items: baseline; justify-content: space-between; padding: 14px 16px 10px; }
+  .sum-label { font-size: 14px; color: var(--text-2); }
+  .sum-total { font-size: 28px; font-weight: 700; color: var(--primary); }
+  .sum-total .unit { font-size: 13px; font-weight: 400; margin-left: 3px; }
+  .sum-row { display: flex; align-items: center; padding: 9px 16px; border-top: 1px solid var(--line); font-size: 14px; }
+  .sum-row.head { color: var(--text-3); font-size: 12px; border-top: none; padding-top: 2px; }
+  .c-subject { flex: 2.2; display: flex; align-items: center; }
+  .c-count, .c-price { flex: 1; text-align: right; }
+  .c-sum { flex: 1.2; text-align: right; font-weight: 600; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
+
+  /* ===== 空状态 ===== */
+  .empty { padding: 30px 20px; text-align: center; }
+  .empty-icon { font-size: 40px; margin-bottom: 10px; }
+  .empty-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .empty-desc { font-size: 13px; color: var(--text-3); line-height: 1.6; margin-bottom: 16px; }
+  .empty-btn {
+    border: none; background: var(--primary); color: #fff; font-size: 14px;
+    padding: 9px 30px; border-radius: 999px;
+  }
+
+  /* ===== 底部 Tab ===== */
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    display: flex; max-width: 520px; margin: 0 auto;
+    background: #fff; border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tab {
+    flex: 1; text-align: center; padding: 9px 0 7px; color: var(--text-3);
+    font-size: 12px; border: none; background: none; cursor: pointer;
+  }
+  .tab .icon { display: block; font-size: 20px; line-height: 1.2; }
+  .tab.active { color: var(--primary); font-weight: 600; }
+
+  /* ===== 课表 ===== */
+  .tip { text-align: center; font-size: 12px; color: var(--text-3); padding-top: 4px; }
+  .tt { padding: 8px 6px 10px; }
+  .tt-head-row { display: flex; align-items: center; padding-bottom: 6px; }
+  .tt-corner { width: 36px; font-size: 10px; color: var(--text-3); text-align: center; }
+  .tt-head { flex: 1; text-align: center; font-size: 13px; color: var(--text-2); }
+  .tt-head.wknd { color: #E34D59; }
+  .tt-row { display: flex; margin-bottom: 5px; }
+  .tt-lesson { width: 36px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text-3); }
+  .tt-cell {
+    flex: 1; height: 48px; margin: 0 2.5px; border-radius: 8px;
+    border: 1px dashed var(--line);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    overflow: hidden; cursor: pointer;
+  }
+  .tt-cell:active { opacity: .7; }
+  .tt-cell.filled { border-style: solid; }
+  .tt-subject { font-size: 12px; font-weight: 500; max-width: 100%; overflow: hidden; white-space: nowrap; }
+  .tt-price { font-size: 10px; opacity: .75; }
+
+  .legend { padding: 12px 16px; }
+  .legend-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .legend-item { display: flex; align-items: center; padding: 6px 0; font-size: 14px; }
+  .legend-name { flex: 1; }
+  .legend-price { color: var(--text-2); font-size: 13px; margin-right: 12px; }
+  .legend-count { color: var(--text-3); font-size: 12px; }
+
+  .danger { display: flex; padding: 4px 0; }
+  .danger-btn { flex: 1; text-align: center; padding: 12px 0; font-size: 13px; color: var(--text-2); background: none; border: none; }
+  .danger-btn.strong { color: var(--danger); }
+  .danger-btn:active { background: #F7F8FA; }
+
+  /* 备份 */
+  .backup { padding: 12px 16px; }
+  .backup-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .backup textarea {
+    width: 100%; height: 72px; border: 1px solid var(--line); border-radius: 8px;
+    padding: 8px; font-size: 11px; resize: none; background: #FAFBFC;
+  }
+  .backup-actions { display: flex; gap: 10px; margin-top: 8px; }
+  .backup-btn { flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 0; font-size: 13px; color: var(--text-2); }
+
+  /* ===== 抽屉 ===== */
+  .mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; animation: fade .2s both; }
+  .drawer {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 101;
+    max-width: 520px; margin: 0 auto;
+    background: #fff; border-radius: 16px 16px 0 0;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    animation: slideUp .25s both;
+  }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { transform: translateY(30%); opacity: .5; } to { transform: none; opacity: 1; } }
+  .drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 8px; }
+  .drawer-title { font-size: 17px; font-weight: 600; }
+  .drawer-close { width: 28px; height: 28px; line-height: 28px; text-align: center; color: var(--text-3); font-size: 16px; cursor: pointer; }
+  .drawer-body { max-height: 46vh; overflow-y: auto; }
+  .slot-item { display: flex; align-items: center; padding: 11px 16px; cursor: pointer; }
+  .slot-item:active { background: #F7F8FA; }
+  .slot-item.off .slot-lesson, .slot-item.off .slot-subject, .slot-item.off .slot-price { opacity: .35; }
+  .slot-lesson { width: 60px; font-size: 13px; color: var(--text-3); }
+  .slot-subject { flex: 1; font-size: 15px; font-weight: 500; }
+  .slot-price { font-size: 13px; color: var(--text-2); margin-right: 10px; }
+  .checkbox { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); flex-shrink: 0; position: relative; }
+  .checkbox.checked { background: var(--primary); border-color: var(--primary); }
+  .checkbox.checked::after {
+    content: ''; position: absolute; left: 5.5px; top: 2.5px; width: 5px; height: 9px;
+    border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+  .drawer-empty { padding: 40px 0; text-align: center; color: var(--text-3); }
+  .drawer-foot { display: flex; align-items: baseline; justify-content: space-between; padding: 12px 16px 0; border-top: 1px solid var(--line); }
+  .drawer-foot-label { font-size: 13px; color: var(--text-2); }
+  .drawer-foot-amount { font-size: 22px; font-weight: 700; color: var(--primary); }
+  .drawer-tip { padding: 6px 16px 0; font-size: 11px; color: var(--text-3); }
+
+  /* 编辑抽屉表单 */
+  .form { padding: 4px 16px 0; }
+  .form-row { display: flex; align-items: center; border-bottom: 1px solid var(--line); padding: 6px 0; }
+  .form-label { width: 70px; font-size: 14px; color: var(--text-2); }
+  .form-input { flex: 1; border: none; outline: none; font-size: 15px; height: 36px; background: none; }
+  .chips { display: flex; flex-wrap: wrap; padding: 10px 0 4px; }
+  .chip {
+    display: flex; align-items: center; padding: 4px 12px; background: #F2F3F5;
+    border-radius: 999px; font-size: 13px; margin: 0 8px 8px 0; cursor: pointer;
+  }
+  .drawer-actions { display: flex; gap: 10px; padding: 12px 16px 4px; }
+  .btn { flex: 1; border-radius: 999px; font-size: 15px; padding: 10px 0; border: none; }
+  .btn.ghost { background: #F2F3F5; color: var(--text-2); }
+  .btn.primary { background: var(--primary); color: #fff; }
+  .btn:active { opacity: .8; }
+
+  /* 月份选择器 */
+  .mp-body { padding: 4px 16px 16px; }
+  .mp-year { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 12px; }
+  .mp-year button { font-size: 20px; border: none; background: none; color: var(--text-2); padding: 4px 12px; }
+  .mp-year .y { font-size: 17px; font-weight: 600; }
+  .mp-grid { display: flex; flex-wrap: wrap; }
+  .mp-month {
+    width: 25%; text-align: center; padding: 11px 0; font-size: 15px; cursor: pointer; border-radius: 10px;
+  }
+  .mp-month:active { background: #F2F3F5; }
+  .mp-month.cur { color: #fff; background: var(--primary); font-weight: 600; }
+
+  /* toast */
+  #toast {
+    position: fixed; left: 50%; bottom: 120px; transform: translateX(-50%);
+    background: rgba(0,0,0,.75); color: #fff; font-size: 13px;
+    padding: 9px 20px; border-radius: 999px; z-index: 200;
+    opacity: 0; transition: opacity .25s; pointer-events: none; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- ===== 日历视图 ===== -->
+  <div id="viewCalendar" class="page">
+    <div class="nav card">
+      <button class="nav-arrow" onclick="prevMonth()">‹</button>
+      <div class="nav-title" onclick="openMonthPicker()" id="dateText"></div>
+      <button class="nav-arrow" onclick="nextMonth()">›</button>
+      <button class="nav-today" onclick="goToday()">今日</button>
+    </div>
+
+    <div class="card">
+      <div class="week-row" id="weekRow"></div>
+      <div class="days" id="daysGrid"></div>
+    </div>
+
+    <div class="card" id="summaryCard"></div>
+    <div class="card empty" id="emptyCard" style="display:none">
+      <div class="empty-icon">📅</div>
+      <div class="empty-title">还没有课表</div>
+      <div class="empty-desc">设置每周课程和课时费后<br>这里会自动统计每月工资</div>
+      <button class="empty-btn" onclick="switchTab('timetable')">去设置课表</button>
+    </div>
+  </div>
+
+  <!-- ===== 课表视图 ===== -->
+  <div id="viewTimetable" class="page hidden">
+    <div class="tip">点击任意格子设置该时段的课程与课时费</div>
+    <div class="card tt">
+      <div class="tt-head-row" id="ttHead"></div>
+      <div id="ttRows"></div>
+    </div>
+    <div class="card legend" id="legendCard"></div>
+    <div class="card backup">
+      <div class="backup-title">数据备份</div>
+      <textarea id="backupText" placeholder="点击「导出」生成备份，复制保存；或粘贴备份内容后点「导入」恢复"></textarea>
+      <div class="backup-actions">
+        <button class="backup-btn" onclick="exportData()">导出数据</button>
+        <button class="backup-btn" onclick="importData()">导入数据</button>
+      </div>
+    </div>
+    <div class="card danger">
+      <button class="danger-btn" onclick="clearTimetable()">清空课表</button>
+      <button class="danger-btn strong" onclick="clearAllData()">清空全部数据</button>
+    </div>
+  </div>
+
+  <!-- ===== 底部 Tab ===== -->
+  <div class="tabbar">
+    <button class="tab active" id="tabCalendar" onclick="switchTab('calendar')">
+      <span class="icon">📅</span>日历
+    </button>
+    <button class="tab" id="tabTimetable" onclick="switchTab('timetable')">
+      <span class="icon">📋</span>课表
+    </button>
+  </div>
+
+  <!-- ===== 抽屉容器 ===== -->
+  <div id="layer"></div>
+  <div id="toast"></div>
+</div>
+
+<script>
+/* ================= 农历（与优化版小程序 utils/lunar.js 一致） ================= */
+var lunarInfo=[0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,0x06ca0,0x0b550,0x15355,0x04da0,0x0a5d0,0x14573,0x052d0,0x0a9a8,0x0e950,0x06aa0,0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b5a0,0x195a6,0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x055c0,0x0ab60,0x096d5,0x092e0,0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,0x05aa0,0x076a3,0x096d0,0x04bd7,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0];
+var Animals=['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
+var cmonthName=['正','二','三','四','五','六','七','八','九','十','十一','腊'];
+var nStr1=['日','一','二','三','四','五','六','七','八','九','十'];
+var nStr2=['初','十','廿','卅'];
+var sFtv=['0101*元旦','0214 情人节','0308 妇女节','0312 植树节','0401 愚人节','0422 地球日','0501 劳动节','0504 青年节','0531 无烟日','0601 儿童节','0606 爱眼日','0701 建党日','0707 抗战纪念日','0801 建军节','0910 教师节','0918 九·一八事变纪念日','1001*国庆节','1031 万圣节','1111 光棍节','1201 艾滋病日','1213 南京大屠杀纪念日','1224 平安夜','1225 圣诞节'];
+var wFtv=['0520 母亲节','0630 父亲节','1144 感恩节'];
+var lFtv=['0101*春节','0115 元宵节','0202 龙抬头','0505 端午节','0707 七夕','0715 中元节','0815 中秋节','0909 重阳节','1208 腊八节','1223 小年','0100*除夕'];
+var solarTerm=['小寒','大寒','立春','雨水','惊蛰','春分','清明','谷雨','立夏','小满','芒种','夏至','小暑','大暑','立秋','处暑','白露','秋分','寒露','霜降','立冬','小雪','大雪','冬至'];
+var solarTermBase=[4,19,3,18,4,19,4,19,4,20,4,20,6,22,6,22,6,22,7,22,6,21,6,21];
+var solarTermIdx='0123415341536789:;<9:=<>:=1>?012@015@015@015AB78CDE8CD=1FD01GH01GH01IH01IJ0KLMN;LMBEOPDQRST0RUH0RVH0RWH0RWM0XYMNZ[MB\\]PT^_ST`_WH`_WH`_WM`_WM`aYMbc[Mde]Sfe]gfh_gih_Wih_WjhaWjka[jkl[jmn]ope]qph_qrh_sth_W';
+var solarTermOS='211122112122112121222211221122122222212222222221222122222232222222222222222233223232223232222222322222112122112121222211222122222222222222222222322222112122112121222111211122122222212221222221221122122222222222222222222223222232222232222222222222112122112121122111211122122122212221222221221122122222222222222221211122112122212221222211222122222232222232222222222222112122112121111111222222112121112121111111222222111121112121111111211122112122112121122111222212111121111121111111111122112122112121122111211122112122212221222221222211111121111121111111222111111121111111111111111122112121112121111111222111111111111111111111111122111121112121111111221122122222212221222221222111011111111111111111111122111121111121111111211122112122112121122211221111011111101111111111111112111121111121111111211122112122112221222211221111011111101111111110111111111121111111111111111122112121112121122111111011111121111111111111111011111111112111111111111011111111111111111111221111011111101110111110111011011111111111111111221111011011101110111110111011011111101111111111211111001011101110111110110011011111101111111111211111001011001010111110110011011111101111111110211111001011001010111100110011011011101110111110211111001011001010011100110011001011101110111110211111001010001010011000100011001011001010111110111111001010001010011000111111111111111111111111100011001011001010111100111111001010001010000000111111000010000010000000100011001011001010011100110011001011001110111110100011001010001010011000110011001011001010111110111100000010000000000000000011001010001010011000111100000000000000000000000011001010001010000000111000000000000000000000011001010000010000000';
+
+function lYearDays(y){var s=348;for(var i=0x8000;i>0x8;i>>=1)s+=(lunarInfo[y-1900]&i)?1:0;return s+leapDays(y);}
+function leapDays(y){if(leapMonth(y))return((lunarInfo[y-1900]&0x10000)?30:29);return 0;}
+function leapMonth(y){return lunarInfo[y-1900]&0xf;}
+function monthDays(y,m){return((lunarInfo[y-1900]&(0x10000>>m))?30:29);}
+function sTerm(y,n){return solarTermBase[n]+Math.floor(solarTermOS.charAt((Math.floor(solarTermIdx.charCodeAt(y-1900))-48)*24+n));}
+function getCDay(d){if(d===10)return'初十';if(d===20)return'二十';if(d===30)return'三十';return nStr2[Math.floor(d/10)]+nStr1[d%10];}
+function lunarOf(date){
+  var objDate=new Date(date.getFullYear(),date.getMonth(),date.getDate());
+  var i,leap=0,temp=0,baseDate=new Date(1900,0,31);
+  var offset=Math.round((objDate-baseDate)/86400000);
+  for(i=1900;i<2050&&offset>0;i++){temp=lYearDays(i);offset-=temp;}
+  if(offset<0){offset+=temp;i--;}
+  var year=i;
+  leap=leapMonth(year);var isLeap=false;
+  for(i=1;i<13&&offset>0;i++){
+    if(leap>0&&i===(leap+1)&&!isLeap){--i;isLeap=true;temp=leapDays(year);}
+    else{temp=monthDays(year,i);}
+    if(isLeap&&i===(leap+1))isLeap=false;
+    offset-=temp;
+  }
+  if(offset===0&&leap>0&&i===leap+1){if(isLeap){isLeap=false;}else{isLeap=true;--i;}}
+  if(offset<0){offset+=temp;--i;}
+  return{year:year,month:i,day:offset+1,isLeap:isLeap};
+}
+function solar2lunar(date){
+  var sYear=date.getFullYear(),sMonth=date.getMonth()+1,sDay=date.getDate();
+  var lunar=lunarOf(date);
+  var term='';
+  var t1=sTerm(sYear,(sMonth-1)*2)-1,t2=sTerm(sYear,(sMonth-1)*2+1)-1;
+  if(t1===sDay-1)term=solarTerm[(sMonth-1)*2];
+  if(t2===sDay-1)term=solarTerm[(sMonth-1)*2+1];
+  var solarFestival='';
+  for(var i=0;i<sFtv.length;i++){
+    var m=sFtv[i].match(/^(\d{2})(\d{2})[\s\*](.+)$/);
+    if(m&&+m[1]===sMonth&&+m[2]===sDay){solarFestival=m[3];break;}
+  }
+  if(!solarFestival){
+    for(var j=0;j<wFtv.length;j++){
+      var w=wFtv[j].match(/^(\d{2})(\d)(\d)[\s\*](.+)$/);
+      if(w&&+w[1]===sMonth){
+        var nth=+w[2],dow=+w[3];
+        if(nth<5){
+          var wDate=(dow===0?7:0)+(nth-1)*7+dow;
+          var realDow=date.getDay()===0?7:date.getDay();
+          if(wDate===sDay&&realDow===(dow===0?7:dow)){solarFestival=w[4];break;}
+        }
+      }
+    }
+  }
+  var lunarFestival='';
+  for(var k=0;k<lFtv.length;k++){
+    var l=lFtv[k].match(/^(\d{2})(.{2})[\s\*](.+)$/);
+    if(l){
+      var lm=+l[1],ld=l[2];
+      var monLen=monthDays(lunar.year,lunar.month);
+      var isLastOfLaYue=lunar.month===12&&monLen===lunar.day;
+      if((lm===lunar.month&&Number(ld)===lunar.day)||(ld==='00'&&isLastOfLaYue)){lunarFestival=l[3];break;}
+    }
+  }
+  return{lYear:lunar.year,lMonth:lunar.month,lDay:lunar.day,lunarMonth:cmonthName[lunar.month-1],
+    lunarDay:getCDay(lunar.day),animal:Animals[(lunar.year-1900+12)%12],
+    festival:lunarFestival||solarFestival,term:term};
+}
+
+/* ================= 核心逻辑（与优化版小程序 utils/core.js 一致） ================= */
+var LESSONS_PER_DAY=12;
+var WEEKDAY_NAMES=['一','二','三','四','五','六','日'];
+function weekdayOf(y,m,d){return(new Date(y,m,d).getDay()+6)%7+1;}
+function daysInMonth(y,m){return new Date(y,m+1,0).getDate();}
+function slotIndex(lesson,weekday){return(lesson-1)*7+(weekday-1);}
+function emptyTimetable(){return{slots:new Array(84).fill(null)};}
+function isValidTimetable(tt){return tt&&Array.isArray(tt.slots)&&tt.slots.length===84;}
+function daySlots(timetable,y,m,d){
+  var wd=weekdayOf(y,m,d),list=[];
+  for(var lesson=1;lesson<=LESSONS_PER_DAY;lesson++){
+    var s=timetable.slots[slotIndex(lesson,wd)];
+    if(s&&s.subject)list.push({lesson:lesson,subject:s.subject,price:s.price});
+  }
+  return list;
+}
+function dayChecked(records,timetable,y,m,d){
+  var key=y+'-'+(m+1);
+  var rec=records[key]&&records[key][d];
+  return daySlots(timetable,y,m,d).map(function(s){
+    return{lesson:s.lesson,subject:s.subject,price:s.price,on:rec?!!rec[s.lesson-1]:true};
+  });
+}
+function setSlotChecked(records,y,m,d,lesson,on){
+  var key=y+'-'+(m+1);
+  var clone={};
+  Object.keys(records).forEach(function(k){clone[k]=records[k];});
+  clone[key]={};
+  Object.keys(records[key]||{}).forEach(function(dk){clone[key][dk]=records[key][dk];});
+  if(!clone[key][d])clone[key][d]=new Array(LESSONS_PER_DAY).fill(true);
+  else clone[key][d]=clone[key][d].slice();
+  clone[key][d][lesson-1]=on;
+  return clone;
+}
+function dayAmount(list){return list.reduce(function(sum,x){return sum+(x.on?x.price:0);},0);}
+function monthCells(y,m){
+  var firstWeekday=weekdayOf(y,m,1),offset=firstWeekday-1,count=daysInMonth(y,m),cells=[];
+  for(var i=0;i<42;i++){
+    var day=i-offset+1;
+    if(day<1||day>count){cells.push(null);continue;}
+    var l=solar2lunar(new Date(y,m,day));
+    var text;
+    if(l.festival)text=l.festival;
+    else if(l.term)text=l.term;
+    else if(l.lDay===1)text=l.lunarMonth+'月';
+    else text=l.lunarDay;
+    cells.push({day:day,lunar:text,lunarHl:!!(l.festival||l.term),weekday:(i%7)+1});
+  }
+  return cells;
+}
+function monthSummary(timetable,records,y,m){
+  var map={},order=[],count=daysInMonth(y,m);
+  for(var d=1;d<=count;d++){
+    var list=dayChecked(records,timetable,y,m,d);
+    for(var i=0;i<list.length;i++){
+      var s=list[i];
+      if(!s.on)continue;
+      if(!map[s.subject]){map[s.subject]={subject:s.subject,price:s.price,count:0};order.push(s.subject);}
+      map[s.subject].count++;
+    }
+  }
+  var subjects=order.map(function(k){
+    var x=map[k];
+    return{subject:x.subject,price:x.price,count:x.count,sum:Math.round(x.price*x.count*100)/100};
+  });
+  var total=subjects.reduce(function(sum,x){return sum+x.sum;},0);
+  return{total:Math.round(total*100)/100,subjects:subjects};
+}
+function timetableSubjects(timetable){
+  var map={},order=[];
+  for(var i=0;i<timetable.slots.length;i++){
+    var s=timetable.slots[i];
+    if(!s||!s.subject)continue;
+    if(!map[s.subject]){map[s.subject]={subject:s.subject,price:s.price,count:0};order.push(s.subject);}
+    map[s.subject].count++;
+  }
+  return order.map(function(k){return map[k];});
+}
+function money(n){return Math.round(n*100)/100;}
+
+/* ================= 存储层 ================= */
+var PALETTE=['#4F6EF7','#12B886','#FA8C16','#EB5757','#9B51E0','#00B8D9','#E84393','#8BC34A'];
+function getTimetable(){
+  try{var tt=JSON.parse(localStorage.getItem('timetable_v2'));
+  if(isValidTimetable(tt))return tt;}catch(e){}
+  return emptyTimetable();
+}
+function saveTimetable(tt){localStorage.setItem('timetable_v2',JSON.stringify(tt));}
+function getRecords(){
+  try{var r=JSON.parse(localStorage.getItem('records_v2'));
+  if(r&&typeof r==='object')return r;}catch(e){}
+  return{};
+}
+function saveRecords(r){localStorage.setItem('records_v2',JSON.stringify(r));}
+
+/* ================= 应用状态与渲染 ================= */
+var state={tab:'calendar',y:0,m:0,detailDay:0,mpYear:0};
+var $=function(id){return document.getElementById(id);};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function init(){
+  var now=new Date();
+  state.y=now.getFullYear();state.m=now.getMonth();
+  var wk='';
+  for(var i=0;i<7;i++)wk+='<div class="week'+(i>=5?' wknd':'')+'">'+WEEKDAY_NAMES[i]+'</div>';
+  $('weekRow').innerHTML=wk;
+  render();
+}
+
+function render(){
+  renderCalendar();
+  renderTimetable();
+  $('dateText').textContent=state.y+'年'+(state.m+1)+'月';
+}
+
+/* ---------- 日历 ---------- */
+function renderCalendar(){
+  var timetable=getTimetable(),records=getRecords();
+  var now=new Date();
+  var isTodayMonth=now.getFullYear()===state.y&&now.getMonth()===state.m;
+  var todayD=now.getDate();
+  var hasTimetable=false;
+  var html='';
+  var cells=monthCells(state.y,state.m);
+  for(var i=0;i<42;i++){
+    var c=cells[i];
+    if(!c){html+='<div class="day-cell blank"></div>';continue;}
+    var list=dayChecked(records,timetable,state.y,state.m,c.day);
+    if(list.length)hasTimetable=true;
+    var amount=dayAmount(list);
+    html+='<div class="day-cell'+(c.weekday>=6?' wknd':'')+(isTodayMonth&&c.day===todayD?' today':'')+'" onclick="tapDay('+c.day+')">'
+      +'<div class="day-num">'+c.day+'</div>'
+      +'<div class="day-lunar'+(c.lunarHl?' hl':'')+'">'+esc(c.lunar)+'</div>'
+      +(list.length?'<div class="day-amount'+(amount>0?'':' zero')+'">'+amount+'</div>':'')
+      +'</div>';
+  }
+  $('daysGrid').innerHTML=html;
+
+  var sum=monthSummary(timetable,records,state.y,state.m);
+  if(sum.subjects.length){
+    var rows=sum.subjects.map(function(s,idx){
+      var color=PALETTE[idx%PALETTE.length];
+      return'<div class="sum-row"><div class="c-subject"><span class="dot" style="background:'+color+'"></span>'+esc(s.subject)+'</div>'
+        +'<div class="c-count">'+s.count+'节</div><div class="c-price">'+s.price+'元</div><div class="c-sum">'+s.sum+'元</div></div>';
+    }).join('');
+    $('summaryCard').innerHTML='<div class="sum-head"><span class="sum-label">本月工资</span>'
+      +'<span class="sum-total">'+sum.total+'<span class="unit">元</span></span></div>'
+      +'<div class="sum-row head"><div class="c-subject">科目</div><div class="c-count">节数</div><div class="c-price">课时费</div><div class="c-sum">小计</div></div>'+rows;
+    $('summaryCard').style.display='';
+  }else{
+    $('summaryCard').style.display='none';
+  }
+  $('emptyCard').style.display=hasTimetable?'none':'';
+}
+
+function prevMonth(){if(state.m===0){state.m=11;state.y--;}else state.m--;clampYM();renderCalendar();$('dateText').textContent=state.y+'年'+(state.m+1)+'月';}
+function nextMonth(){if(state.m===11){state.m=0;state.y++;}else state.m++;clampYM();renderCalendar();$('dateText').textContent=state.y+'年'+(state.m+1)+'月';}
+function clampYM(){
+  if(state.y<1901){state.y=1901;state.m=0;}
+  if(state.y>2050){state.y=2050;state.m=11;}
+}
+function goToday(){var n=new Date();state.y=n.getFullYear();state.m=n.getMonth();renderCalendar();$('dateText').textContent=state.y+'年'+(state.m+1)+'月';}
+
+/* 月份选择器 */
+function openMonthPicker(){
+  state.mpYear=state.y;
+  renderMonthPicker();
+  $('layer').innerHTML='<div class="mask" onclick="closeLayer()"></div><div class="drawer"><div class="drawer-head">'
+    +'<div class="drawer-title">选择月份</div><div class="drawer-close" onclick="closeLayer()">✕</div></div>'
+    +'<div class="mp-body" id="mpBody"></div></div>';
+}
+function renderMonthPicker(){
+  var html='<div class="mp-year"><button onclick="mpYearShift(-1)">‹</button><span class="y">'+state.mpYear+'年</span><button onclick="mpYearShift(1)">›</button></div><div class="mp-grid">';
+  for(var i=0;i<12;i++){
+    html+='<div class="mp-month'+(state.mpYear===state.y&&i===state.m?' cur':'')+'" onclick="pickMonth('+state.mpYear+','+i+')">'+(i+1)+'月</div>';
+  }
+  $('mpBody').innerHTML=html+'</div>';
+}
+function mpYearShift(d){state.mpYear+=d;renderMonthPicker();}
+function pickMonth(y,m){state.y=y;state.m=m;closeLayer();renderCalendar();$('dateText').textContent=state.y+'年'+(state.m+1)+'月';}
+
+/* 当天课程抽屉 */
+function tapDay(day){
+  state.detailDay=day;
+  renderDayDrawer();
+}
+function renderDayDrawer(){
+  var timetable=getTimetable(),records=getRecords();
+  var day=state.detailDay;
+  var list=dayChecked(records,timetable,state.y,state.m,day);
+  var wdName=WEEKDAY_NAMES[weekdayOf(state.y,state.m,day)-1];
+  var items=list.map(function(s){
+    return'<div class="slot-item'+(s.on?'':' off')+'" onclick="toggleSlot('+s.lesson+')">'
+      +'<div class="slot-lesson">第'+s.lesson+'节</div><div class="slot-subject">'+esc(s.subject)+'</div>'
+      +'<div class="slot-price">'+s.price+'元</div><div class="checkbox'+(s.on?' checked':'')+'"></div></div>';
+  }).join('');
+  if(!list.length)items='<div class="drawer-empty">这天没有排课</div>';
+  var total=dayAmount(list);
+  $('layer').innerHTML='<div class="mask" onclick="closeLayer()"></div><div class="drawer">'
+    +'<div class="drawer-head"><div class="drawer-title">'+(state.m+1)+'月'+day+'日 · 周'+wdName+'</div>'
+    +'<div class="drawer-close" onclick="closeLayer()">✕</div></div>'
+    +'<div class="drawer-body">'+items+'</div>'
+    +'<div class="drawer-foot"><span class="drawer-foot-label">当日工资</span><span class="drawer-foot-amount">'+total+'元</span></div>'
+    +'<div class="drawer-tip">点击课程可切换「计入 / 不计入」工资</div></div>';
+}
+function toggleSlot(lesson){
+  var records=getRecords();
+  var list=dayChecked(records,getTimetable(),state.y,state.m,state.detailDay);
+  var item=null;
+  for(var i=0;i<list.length;i++)if(list[i].lesson===lesson){item=list[i];break;}
+  if(!item)return;
+  records=setSlotChecked(records,state.y,state.m,state.detailDay,lesson,!item.on);
+  saveRecords(records);
+  renderDayDrawer();
+  renderCalendar();
+}
+function closeLayer(){$('layer').innerHTML='';state.detailDay=0;}
+
+/* ---------- 课表 ---------- */
+function renderTimetable(){
+  var tt=getTimetable();
+  var subjects=timetableSubjects(tt);
+  var colorOf={};
+  subjects.forEach(function(s,i){colorOf[s.subject]=PALETTE[i%PALETTE.length];});
+
+  var head='<div class="tt-corner">节\\周</div>';
+  for(var i=0;i<7;i++)head+='<div class="tt-head'+(i>=5?' wknd':'')+'">'+WEEKDAY_NAMES[i]+'</div>';
+  $('ttHead').innerHTML=head;
+
+  var html='';
+  for(var lesson=1;lesson<=LESSONS_PER_DAY;lesson++){
+    html+='<div class="tt-row"><div class="tt-lesson">'+lesson+'</div>';
+    for(var wd=1;wd<=7;wd++){
+      var s=tt.slots[slotIndex(lesson,wd)];
+      if(s&&s.subject){
+        var color=colorOf[s.subject]||PALETTE[0];
+        html+='<div class="tt-cell filled" style="background:'+color+'22;border-color:'+color+'" onclick="openEdit('+lesson+','+wd+')">'
+          +'<div class="tt-subject">'+esc(s.subject)+'</div><div class="tt-price">'+s.price+'元</div></div>';
+      }else{
+        html+='<div class="tt-cell" onclick="openEdit('+lesson+','+wd+')"></div>';
+      }
+    }
+    html+='</div>';
+  }
+  $('ttRows').innerHTML=html;
+
+  if(subjects.length){
+    $('legendCard').innerHTML='<div class="legend-title">课程与课时费</div>'+subjects.map(function(s,i){
+      return'<div class="legend-item"><span class="dot" style="background:'+PALETTE[i%PALETTE.length]+'"></span>'
+        +'<span class="legend-name">'+esc(s.subject)+'</span><span class="legend-price">'+s.price+'元/节</span>'
+        +'<span class="legend-count">每周'+s.count+'节</span></div>';
+    }).join('');
+    $('legendCard').style.display='';
+  }else{
+    $('legendCard').style.display='none';
+  }
+}
+
+var editState=null;
+function openEdit(lesson,weekday){
+  var tt=getTimetable();
+  var s=tt.slots[slotIndex(lesson,weekday)];
+  editState={lesson:lesson,weekday:weekday,subject:s?s.subject:'',price:s?String(s.price):''};
+  renderEdit();
+}
+function renderEdit(){
+  var e=editState;
+  var subjects=timetableSubjects(getTimetable());
+  var chips='';
+  if(subjects.length){
+    chips='<div class="chips">'+subjects.map(function(s,i){
+      var color=PALETTE[i%PALETTE.length];
+      var safe=s.subject.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return'<div class="chip" onclick="pickSubject(\''+safe+'\')"><span class="dot" style="background:'+color+'"></span>'+esc(s.subject)+'</div>';
+    }).join('')+'</div>';
+  }
+  $('layer').innerHTML='<div class="mask" onclick="closeLayer()"></div><div class="drawer">'
+    +'<div class="drawer-head"><div class="drawer-title">周'+WEEKDAY_NAMES[e.weekday-1]+' · 第'+e.lesson+'节</div>'
+    +'<div class="drawer-close" onclick="closeLayer()">✕</div></div>'
+    +'<div class="form">'
+    +'<div class="form-row"><span class="form-label">科目</span><input class="form-input" id="editSubject" value="'+esc(e.subject)+'" placeholder="如：数学" maxlength="10"></div>'
+    +'<div class="form-row"><span class="form-label">课时费</span><input class="form-input" id="editPrice" type="number" inputmode="decimal" value="'+esc(e.price)+'" placeholder="元 / 节，如 40"></div>'
+    +chips+'</div>'
+    +'<div class="drawer-actions"><button class="btn ghost" onclick="clearCell()">清除本节</button>'
+    +'<button class="btn primary" onclick="saveEdit()">保存</button></div></div>';
+  var si=$('editSubject');if(si&&!e.subject)si.focus();
+}
+function pickSubject(subject){
+  var known=null;
+  timetableSubjects(getTimetable()).forEach(function(s){if(s.subject===subject)known=s;});
+  $('editSubject').value=subject;
+  if(!$('editPrice').value&&known)$('editPrice').value=String(known.price);
+}
+function saveEdit(){
+  var subject=($('editSubject').value||'').trim();
+  var price=money(parseFloat($('editPrice').value));
+  if(!subject){toast('请输入科目名称');return;}
+  if(!(price>0)){toast('请输入正确的课时费');return;}
+  var tt=getTimetable();
+  tt.slots[slotIndex(editState.lesson,editState.weekday)]={subject:subject,price:price};
+  saveTimetable(tt);
+  closeLayer();renderTimetable();
+  toast('已保存');
+}
+function clearCell(){
+  var tt=getTimetable();
+  tt.slots[slotIndex(editState.lesson,editState.weekday)]=null;
+  saveTimetable(tt);
+  closeLayer();renderTimetable();
+}
+
+/* ---------- 数据管理 ---------- */
+function exportData(){
+  $('backupText').value=JSON.stringify({timetable:getTimetable(),records:getRecords()});
+  $('backupText').focus();$('backupText').select();
+  try{document.execCommand('copy');toast('已生成并复制，请妥善保存');}catch(e){toast('已生成，请手动复制');}
+}
+function importData(){
+  var txt=($('backupText').value||'').trim();
+  if(!txt){toast('请先粘贴备份内容');return;}
+  try{
+    var data=JSON.parse(txt);
+    if(!isValidTimetable(data.timetable))throw new Error('bad');
+    saveTimetable(data.timetable);
+    saveRecords(data.records&&typeof data.records==='object'?data.records:{});
+    render();toast('导入成功');
+  }catch(e){toast('备份内容无效，导入失败');}
+}
+function clearTimetable(){
+  if(confirm('确定清空所有课程安排吗？\n已保存的上课勾选不受影响。')){
+    saveTimetable(emptyTimetable());render();
+  }
+}
+function clearAllData(){
+  if(confirm('将清空课表和所有月份的上课记录，确定继续吗？')){
+    localStorage.removeItem('timetable_v2');
+    localStorage.removeItem('records_v2');
+    render();toast('已清空');
+  }
+}
+
+/* ---------- 通用 ---------- */
+function switchTab(tab){
+  state.tab=tab;
+  $('viewCalendar').classList.toggle('hidden',tab!=='calendar');
+  $('viewTimetable').classList.toggle('hidden',tab!=='timetable');
+  $('tabCalendar').classList.toggle('active',tab==='calendar');
+  $('tabTimetable').classList.toggle('active',tab==='timetable');
+  if(tab==='calendar')renderCalendar();
+  window.scrollTo(0,0);
+}
+var toastTimer=null;
+function toast(msg){
+  var t=$('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){t.classList.remove('show');},1800);
+}
+
+document.addEventListener('DOMContentLoaded',init);
+// 部署在 http(s) 下时注册离线缓存（本地直接打开文件时自动跳过）
+if((location.protocol==='https:'||location.protocol==='http:')&&'serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
+</script>
+</body>
+</html>

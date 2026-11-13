@@ -1,0 +1,221 @@
+.page {
+  padding-bottom: 40rpx;
+}
+
+.tip {
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--text-3);
+  padding: 8rpx 0 0;
+}
+
+/* 课表网格 */
+.tt {
+  padding: 16rpx 12rpx 20rpx;
+}
+
+.tt-head-row {
+  display: flex;
+  align-items: center;
+  padding-bottom: 12rpx;
+}
+
+.tt-corner {
+  width: 72rpx;
+  font-size: 20rpx;
+  color: var(--text-3);
+  text-align: center;
+}
+
+.tt-head {
+  flex: 1;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--text-2);
+}
+
+.tt-head.wknd {
+  color: #E34D59;
+}
+
+.tt-row {
+  display: flex;
+  margin-bottom: 10rpx;
+}
+
+.tt-lesson {
+  width: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  color: var(--text-3);
+}
+
+.tt-cell {
+  flex: 1;
+  height: 96rpx;
+  margin: 0 5rpx;
+  border-radius: 12rpx;
+  border: 2rpx dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.tt-cell:active {
+  opacity: 0.7;
+}
+
+.tt-cell.filled {
+  border-style: solid;
+}
+
+.tt-subject {
+  font-size: 24rpx;
+  font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.tt-price {
+  font-size: 20rpx;
+  opacity: 0.75;
+}
+
+/* 科目汇总 */
+.legend {
+  padding: 24rpx 32rpx;
+}
+
+.legend-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  padding: 12rpx 0;
+  font-size: 28rpx;
+}
+
+.legend-name {
+  flex: 1;
+}
+
+.legend-price {
+  color: var(--text-2);
+  font-size: 26rpx;
+  margin-right: 24rpx;
+}
+
+.legend-count {
+  color: var(--text-3);
+  font-size: 24rpx;
+}
+
+.dot {
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+/* 危险操作 */
+.danger {
+  display: flex;
+  padding: 8rpx 0;
+}
+
+.danger-btn {
+  flex: 1;
+  text-align: center;
+  padding: 24rpx 0;
+  font-size: 26rpx;
+  color: var(--text-2);
+}
+
+.danger-btn.strong {
+  color: var(--danger);
+}
+
+.danger-btn:active {
+  background: #F7F8FA;
+}
+
+/* 编辑抽屉 */
+.form {
+  padding: 8rpx 32rpx 0;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1rpx solid var(--line);
+  padding: 12rpx 0;
+}
+
+.form-label {
+  width: 140rpx;
+  font-size: 28rpx;
+  color: var(--text-2);
+}
+
+.form-input {
+  flex: 1;
+  font-size: 30rpx;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 20rpx 0 8rpx;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 24rpx;
+  background: #F2F3F5;
+  border-radius: 999rpx;
+  font-size: 26rpx;
+  margin: 0 16rpx 16rpx 0;
+}
+
+.chip:active {
+  background: var(--primary-light);
+}
+
+.drawer-actions {
+  display: flex;
+  gap: 20rpx;
+  padding: 24rpx 32rpx 8rpx;
+}
+
+.btn {
+  flex: 1;
+  border-radius: 999rpx;
+  font-size: 30rpx;
+  line-height: 2.5;
+  margin: 0;
+}
+
+.btn::after {
+  border: none;
+}
+
+.btn.ghost {
+  background: #F2F3F5;
+  color: var(--text-2);
+}
+
+.btn.primary {
+  background: var(--primary);
+  color: #fff;
+}

@@ -1,0 +1,80 @@
+page {
+  --primary: #4F6EF7;
+  --primary-light: #EEF1FE;
+  --danger: #EB5757;
+  --warn: #FA8C16;
+  --text: #1F2329;
+  --text-2: #646A73;
+  --text-3: #8F959E;
+  --bg: #F5F6FA;
+  --card: #FFFFFF;
+  --line: #E5E6EB;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 28rpx;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+}
+
+/* 通用卡片 */
+.card {
+  background: var(--card);
+  border-radius: 20rpx;
+  margin: 20rpx 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(31, 35, 41, 0.04);
+  overflow: hidden;
+}
+
+/* 底部抽屉与遮罩 */
+.mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 100;
+  animation: fadeIn 0.2s ease both;
+}
+
+.drawer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 101;
+  background: var(--card);
+  border-radius: 32rpx 32rpx 0 0;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  animation: slideUp 0.25s ease both;
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx 32rpx 16rpx;
+}
+
+.drawer-title {
+  font-size: 34rpx;
+  font-weight: 600;
+}
+
+.drawer-close {
+  width: 56rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 32rpx;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30%); opacity: 0.5; }
+  to { transform: translateY(0); opacity: 1; }
+}

@@ -1,0 +1,7 @@
+{
+  "desc": "课时工资小程序",
+  "rules": [{
+    "action": "allow",
+    "page": "*"
+  }]
+}

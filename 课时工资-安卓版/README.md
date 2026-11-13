@@ -22,28 +22,15 @@
 
 把整个文件夹放到任意静态服务器（自家 NAS、GitHub Pages、Vercel 等），手机 Chrome 访问后「添加到主屏幕」。已包含 `manifest.webmanifest`、图标和离线缓存（`sw.js`），添加后**无网络也能正常使用**。
 
-### 方式三：打包成独立 APK（可选）
+### 方式三：安装独立 APK（已打包好）
 
-如果需要一个真正独立安装的 APK，使用 [Capacitor](https://capacitorjs.com/)（免费开源）。在装有 Node.js 和 Android Studio 的电脑上执行：
+本目录已包含打包好的 **`课时工资.apk`**（WebView 原生封装，v1.0，支持 Android 5.0+，约 49KB）。
 
-```bash
-# 1. 创建工程（先把这个文件夹里的 index.html 等文件放入 www 目录）
-npm init -y
-npm install @capacitor/core @capacitor/cli @capacitor/android
-npx cap init "课时工资" com.example.ksgz --web-dir www
+安装步骤：把 APK 传到安卓手机 → 点击打开 → 允许「安装未知来源应用」→ 安装即可。
 
-# 2. 把本目录（index.html、manifest、图标等）复制进 www/ 后：
-npx cap add android
-
-# 3. 生成 APK（或用 Android Studio 打开 android/ 项目构建 Release 签名包）
-cd android
-./gradlew assembleDebug
-# APK 输出在 android/app/build/outputs/apk/debug/app-debug.apk
-```
-
-把生成的 APK 传到手机安装即可。也可以用 Android Studio 的 `Build > Generate Signed Bundle / APK` 制作正式签名包发布。
-
-> 数据说明：APK 版数据保存在应用沙箱内；卸载应用会清空数据，卸载前请先用应用内「导出数据」备份。
+> APK 使用调试证书签名，适合个人使用；如需上架商店，请用正式签名重新打包。
+> 数据保存在应用沙箱内（localStorage），卸载应用会清空，卸载前请先用应用内「导出数据」备份。
+> 工程源码在 `../apk-build/`，修改 `assets/index.html` 后运行 `build.sh` 即可重新打包。
 
 ## 数据结构（供备份 / 二次开发参考）
 
